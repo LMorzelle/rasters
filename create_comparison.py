@@ -22,6 +22,7 @@ def create_comparison_figure(dem_path: Path, swiss_dem_path: Path, vmin=5, vmax=
     })
         # Calculate the difference between the reprojected DEM and swiss_dem
     dem_diff = dem_reprojected - swiss_dem
+    dem_diff = dem_diff.rio.slice_xy(dem.x.min().item(), dem.y.min().item(), dem.x.max().item(), dem.y.max().item())
     dem_diff_subset = dem_diff.isel(x=slice(0, None, 10), y=slice(0, None, 10))
     # Find the center coordinates of dem_diff_subset
     center_x = dem_diff_subset.x.mean().item()
