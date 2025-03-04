@@ -3,11 +3,15 @@ from pathlib import Path
 import numpy as np
 import rioxarray
 import matplotlib.pyplot as plt
+import geopandas as gpd
 from matplotlib import cm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.colors import Normalize
 
-def create_comparison_figure(dem_path: Path, swiss_dem_path: Path, vmin=5, vmax=5, crop_size=2000, xtickdelta=1000, ytickdelta=1000):
+from osgeo import gdal
+from cmcrameri import cm
+
+def create_comparison_figure(dem_path: Path, swiss_dem_path: Path, markers_path: Path, vmin=5, vmax=5, crop_size=2000, xtickdelta=1000, ytickdelta=1000):
     # Load the DEM file
 
 
@@ -31,7 +35,7 @@ def create_comparison_figure(dem_path: Path, swiss_dem_path: Path, vmin=5, vmax=
     # Select a subset of the dem_reprojected data array by slicing the x and y coordinates from 0 to 30000 with a step of 10
 
     fig, ax = plt.subplots(figsize=(10, 7))
-    cax = dem_diff_subset.plot(cmap='terrain', ax=ax, add_colorbar=False, vmin=vmin, vmax=vmax)
+    cax = dem_diff_subset.plot(cmap=cm.vik, ax=ax, add_colorbar=False, vmin=vmin, vmax=vmax)
     ax.set_xlim(center_x - crop_size, center_x + crop_size)
     ax.set_ylim(center_y - crop_size, center_y + crop_size)
 
@@ -72,9 +76,23 @@ def create_comparison_figure(dem_path: Path, swiss_dem_path: Path, vmin=5, vmax=
     # set a color for every bar (patch) according 
     # to bin value from normalized min-max interval
     for bin, patch in zip(bins, patches):
-        color = cm.terrain(norm(bin))
+        color = cm.vik(norm(bin))
         patch.set_facecolor(color)
 
     axHist.set_ylim(vmin, vmax)
+
+    if not dem_path.with_suffix(".gpkg").exists() or not dem_path.with_suffix(".gpkg").is_file():
+        gdal.Footprint(dem_path.with_suffix('.gpkg').resolve().as_posix(), dem_path)
+
+    gdf = gpd.read_file(dem_path.with_suffix('.gpkg'))
+    gdf.plot(ax=ax, edgecolor='black', linewidth=0.5, facecolor='none')
+
+    markers = gpd.read_file(markers_path)
+    markers["type"] = markers["NAME"].apply(lambda x: "gcp" if x.lower().startswith("gcp") else "cp")
+    for idx, row in markers.iterrows():
+        offset_x, offset_y = 15, 15  # Specify the offset values
+        ax.text(row.geometry.x + offset_x, row.geometry.y + offset_y, row["NAME"], fontsize=10, ha='right')
+    markers[markers["type"] == "cp"].plot(legend=False, edgecolor="black", facecolor="black", linewidth=0.5, ax=ax, markersize=40, marker='o')
+    markers[markers["type"] == "gcp"].plot(legend=False, edgecolor="black",  facecolor="black",linewidth=0.5, ax=ax, markersize=40, marker='s')
 
     plt.show()
