@@ -65,7 +65,7 @@ def create_comparison_figure(dem_path: Path, swiss_dem_path: Path, vmin=5, vmax=
     # get hist data
     bin_width = 0.05  # 10 cm in meters
     bins = np.arange(vmin, vmax + bin_width, bin_width)
-    N, bins, patches = axHist.hist(np.ndarray.flatten(dem_diff_subset.values), bins=bins, orientation='horizontal')
+    N, bins, patches = axHist.hist(np.ndarray.flatten(dem_diff.values), bins=bins, orientation='horizontal')
 
     norm = Normalize(bins.min(), bins.max())
     # set a color for every bar (patch) according 
