@@ -32,6 +32,8 @@ def create_comparison_figure(dem_path: Path, swiss_dem_path: Path, markers_path:
     center_x = dem_diff_subset.x.mean().item()
     center_y = dem_diff_subset.y.mean().item()
 
+    dem_diff_subset.rio.to_raster((dem_path.parent / (dem_path.stem + "_diff.tif")).resolve().as_posix())
+
     # Select a subset of the dem_reprojected data array by slicing the x and y coordinates from 0 to 30000 with a step of 10
 
     fig, ax = plt.subplots(figsize=(10, 7))
